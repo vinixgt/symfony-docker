@@ -1,0 +1,67 @@
+version: '3.2'
+services:
+    mysql:
+        container_name: sf_mysql
+        build:
+            context: './mysql'
+        restart: always
+        ports:
+            - "3307:3307"
+        volumes:
+            - data:/var/lib/mysql
+        networks:
+            - backend
+        environment:
+            MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+            MYSQL_DATABASE: "${DB_NAME}"
+            MYSQL_USER: "${DB_USERNAME}"
+            MYSQL_PASSWORD: "${DB_PASSWORD}"
+        networks:
+            - frontend
+            - backend
+    redis:
+        container_name: sf_redis
+        build: 
+            context: './redis'
+        volumes:
+            - data:/var/lib/redis
+        ports:
+            - "6379:6379"
+        networks:
+            - backend
+
+    php:
+        container_name: sf_php
+        build:
+            context: './php/'
+            args:
+                PHP_VERSION: ${PHP_VERSION}
+        networks:
+            - backend
+        volumes:
+            - ./${PROJECT_ROOT}:/var/www/html
+    apache:
+        container_name: sf_apache
+        build:
+            context: './apache/'
+            args:
+                APACHE_VERSION: ${APACHE_VERSION}
+        depends_on:
+            - php
+            - mysql
+        networks:
+            - frontend
+            - backend
+        ports:
+            - "80:80"
+        volumes:
+            - ./${PROJECT_ROOT}:/var/www/html
+volumes:
+    data:
+    code:
+
+networks:
+    frontend:
+        driver: ${NETWORKS_DRIVER}
+    backend:
+        driver: ${NETWORKS_DRIVER}
